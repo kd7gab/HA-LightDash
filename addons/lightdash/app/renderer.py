@@ -90,11 +90,13 @@ _TPL_TOGGLE_SYNC = _load_tpl("toggle_sync.js")
 _TPL_SLIDER_SYNC = _load_tpl("slider_sync.js")
 _TPL_DIMMER = _load_tpl("dimmer.js")
 _TPL_COVER = _load_tpl("cover.js")
+_TPL_CLIMATE = _load_tpl("climate.js")
 _TPL_AUTO_REVERT = _load_tpl("auto_revert.js")
 _TPL_ALARM_PANEL = _load_tpl("alarm_panel.js")
 
 _DIMMER_MODAL_HTML = (_TPL_DIR / "dimmer_modal.html").read_text() if (_TPL_DIR / "dimmer_modal.html").exists() else ""
 _COVER_MODAL_HTML = (_TPL_DIR / "cover_modal.html").read_text() if (_TPL_DIR / "cover_modal.html").exists() else ""
+_CLIMATE_MODAL_HTML = (_TPL_DIR / "climate_modal.html").read_text() if (_TPL_DIR / "climate_modal.html").exists() else ""
 
 
 def _url(path: str) -> str:
@@ -162,12 +164,13 @@ def render_view(view: View, dashboard: Dashboard, ha_url: str = "", entity_icons
     if needs_clock or needs_fit_text:
         head_extra += '<script src="' + _url("/static/scripts.js") + '"></script>\n'
     modal_html = ""
+    modal_scripts = ""
     body_script = ""
 
     if dashboard.lightdash.auto_close_modal_seconds > 0:
         body_script += '<script>var _acMs=' + str(dashboard.lightdash.auto_close_modal_seconds * 1000) + ';</script>\n'
 
-    if _view_needs_light_dimmer(view):
+    if _view_needs_level_modal(view):
         auto_close_timer = ""
         auto_close_reset = ""
         if dashboard.lightdash.auto_close_modal_seconds > 0:
@@ -177,7 +180,7 @@ def render_view(view: View, dashboard: Dashboard, ha_url: str = "", entity_icons
             auto_close_reset = "if(typeof _acMs!=='undefined'){clearTimeout(_acTimer);_acTimer=setTimeout(hideDimmer,_acMs)}"
 
         modal_html += _DIMMER_MODAL_HTML
-        head_extra += _TPL_DIMMER.substitute(
+        modal_scripts += _TPL_DIMMER.substitute(
             action_url=_url("/action"),
             state_api_url=_url("/api/state/"),
             auto_close_timer=auto_close_timer,
@@ -194,7 +197,24 @@ def render_view(view: View, dashboard: Dashboard, ha_url: str = "", entity_icons
             auto_close_reset = "if(typeof _acMs!=='undefined'){clearTimeout(_acTimer);_acTimer=setTimeout(hideCover,_acMs)}"
 
         modal_html += _COVER_MODAL_HTML
-        head_extra += _TPL_COVER.substitute(
+        modal_scripts += _TPL_COVER.substitute(
+            action_url=_url("/action"),
+            state_api_url=_url("/api/state/"),
+            auto_close_timer=auto_close_timer,
+            auto_close_reset=auto_close_reset,
+        )
+
+    if _view_needs_climate_modal(view):
+        auto_close_timer = ""
+        auto_close_reset = ""
+        if dashboard.lightdash.auto_close_modal_seconds > 0:
+            auto_close_timer = (
+                "clearTimeout(_acTimer);_acTimer=setTimeout(hideClimate,_acMs);\n"
+            )
+            auto_close_reset = "if(typeof _acMs!=='undefined'){clearTimeout(_acTimer);_acTimer=setTimeout(hideClimate,_acMs)}"
+
+        modal_html += _CLIMATE_MODAL_HTML
+        modal_scripts += _TPL_CLIMATE.substitute(
             action_url=_url("/action"),
             state_api_url=_url("/api/state/"),
             auto_close_timer=auto_close_timer,
@@ -228,6 +248,7 @@ def render_view(view: View, dashboard: Dashboard, ha_url: str = "", entity_icons
         badges=_render_badges(view),
         cards_html=cards_html + "\n",
         modal_html=modal_html,
+        scripts=modal_scripts,
         body_tail=body_tail,
     )
 
@@ -421,19 +442,19 @@ def _view_needs_toggle_sync(view: View) -> bool:
     return False
 
 
-def _view_needs_light_dimmer(view: View) -> bool:
+def _view_needs_level_modal(view: View) -> bool:
     check_cards = view.cards
     if view.sections:
         check_cards = [c for s in view.sections for c in s.cards]
     for c in check_cards:
         if c.type == "tile":
             eid = c.get("entity", "")
-            if eid.split(".")[0] == "light":
+            if eid.split(".")[0] in ("light", "fan"):
                 return True
         if c.type == "entities":
             for ent in (c.get("entities") or []):
                 eid = ent if isinstance(ent, str) else (ent.get("entity", "") if isinstance(ent, dict) else "")
-                if eid.split(".")[0] == "light":
+                if eid.split(".")[0] in ("light", "fan"):
                     return True
     return False
 
@@ -451,6 +472,23 @@ def _view_needs_cover_modal(view: View) -> bool:
             for ent in (c.get("entities") or []):
                 eid = ent if isinstance(ent, str) else (ent.get("entity", "") if isinstance(ent, dict) else "")
                 if eid.split(".")[0] == "cover":
+                    return True
+    return False
+
+
+def _view_needs_climate_modal(view: View) -> bool:
+    check_cards = view.cards
+    if view.sections:
+        check_cards = [c for s in view.sections for c in s.cards]
+    for c in check_cards:
+        if c.type == "tile":
+            eid = c.get("entity", "")
+            if eid.split(".")[0] == "climate":
+                return True
+        if c.type == "entities":
+            for ent in (c.get("entities") or []):
+                eid = ent if isinstance(ent, str) else (ent.get("entity", "") if isinstance(ent, dict) else "")
+                if eid.split(".")[0] == "climate":
                     return True
     return False
 
@@ -1209,8 +1247,12 @@ def _render_entities(card: Card, indent: int = 2) -> str:
         if eid and "." in eid:
             if eid.split(".")[0] == "light":
                 row_attrs["data-light-entity"] = eid
+            elif eid.split(".")[0] == "fan":
+                row_attrs["data-fan-entity"] = eid
             elif eid.split(".")[0] == "cover":
                 row_attrs["data-cover-entity"] = eid
+            elif eid.split(".")[0] == "climate":
+                row_attrs["data-climate-entity"] = eid
         if isinstance(ent, dict):
             ld = ent.get("lightdash", {}) or {}
             if isinstance(ld, dict):
@@ -1336,8 +1378,12 @@ def _render_tile(card: Card, indent: int = 2) -> str:
     if eid and "." in eid:
         if eid.split(".")[0] == "light":
             attrs["data-light-entity"] = eid
+        elif eid.split(".")[0] == "fan":
+            attrs["data-fan-entity"] = eid
         elif eid.split(".")[0] == "cover":
             attrs["data-cover-entity"] = eid
+        elif eid.split(".")[0] == "climate":
+            attrs["data-climate-entity"] = eid
     ld = card.get("lightdash", {}) or {}
     if isinstance(ld, dict):
         fav_vals = ld.get("favourite_values", []) or []
