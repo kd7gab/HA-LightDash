@@ -1,3 +1,12 @@
+# Release Notes for v0.19.5 (2026-08-10)
+
+A fix and a big expansion of the long-press popups: they used to stop working after you changed views, and now they not only keep working everywhere but also cover climate and fan controls, not just lights and covers.
+
+- **Long-press popups no longer break after navigating:** Previously, switching between views made the brightness and shade popups stop appearing until you reloaded the page. They now keep working on every view, no matter how you got there.
+- **Control fans by holding:** Hold a fan tile or row for half a second and a speed slider pops up, pre-filled with the fan's current speed. Tap the fan icon to turn it off (and tap again to turn it back on at the last speed).
+- **New climate popup:** Hold a thermostat tile or row and a popup shows the current room temperature with your target temperature right below it. Use the + and − buttons to nudge the setpoint in half-degree steps, and tap a mode button (Off, Heat, Cool, Auto, etc.) to switch the system. Only the modes your thermostat actually supports are shown.
+- **Consistent everywhere:** The popups work on both tile cards and entity rows, and behave the same across all themes.
+
 # Release Notes for v0.19.4 (2026-08-10)
 
 A bug fix: the press-and-hold brightness and shade-position popups (shown by holding a light or cover tile) were never appearing, even though the feature was documented. LightDash was loading the scripts and styles for these popups, but the popup itself was missing from the package, so nothing was ever shown on screen.

@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.19.5 (2026-08-10)
+- **Fixed:** Long-press modals now keep working after navigating between views. View navigation is done with an htmx body swap, but the modal scripts only ran on the initial `DOMContentLoaded` and held stale element references, so after the first navigation the modal silently stopped appearing.
+- **Changed:** `dimmer.js` and `cover.js` rewritten to use document-level event delegation with lazy element lookup. They wire up once and work on every view, and the scripts now render in the view body so htmx re-evaluates them on each swap (a window flag keeps them from wiring twice). `_view_needs_light_dimmer` generalized to `_view_needs_level_modal`.
+- **Added:** Long-press support for **fan** entities — the same brightness-style modal now controls fan speed (`fan.set_percentage`), with an on/off toggle via the icon and a distinct fill colour.
+- **Added:** Long-press **climate modal** (`climate_modal.html` + `climate.js`) — shows current vs target temperature with +/− buttons (`climate.set_temperature`) and HVAC mode buttons built from the entity's `hvac_modes` attribute (`climate.set_hvac_mode`).
+- **Added:** `data-fan-entity` / `data-climate-entity` attributes on tiles and entity rows; `_view_needs_climate_modal` gating.
+- **Changed:** Climate modal CSS and `dimmer-fade`/`dimmer-pop` keyframes added to the base `style.css` (previously only present in the `ha-dark` theme).
+
 ## v0.19.4 (2026-08-10)
 - **Fixed:** Long-press dimmer and cover modals now actually display. The modal popups were never shown because the modal HTML markup (`dimmer_modal.html`, `cover_modal.html`) was missing from the repository, so the view only got the dimmer/cover JavaScript and CSS — which bailed out because the `#dimmer-modal` / `#cover-modal` elements it drives did not exist.
 - **Added:** `app/templates/dimmer_modal.html` and `app/templates/cover_modal.html` — the long-press popups with their full set of elements the existing `dimmer.js` / `cover.js` scripts expect (track, fill, name, percentage, close button, and up/stop/down controls for covers). Hidden by default, shown on a half-second press-and-hold on a light, fan, or cover tile/row.

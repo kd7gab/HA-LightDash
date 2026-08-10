@@ -1994,3 +1994,187 @@ def test_modals_not_emitted_without_light_or_cover():
     assert 'id="cover-modal"' not in html
     assert "showDimmer" not in html
     assert "showCover" not in html
+
+
+def test_fan_modal_emitted_for_fan_tile():
+    """Long-press level modal (dimmer) must be injected for fan tiles."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Fans",
+                "path": "fans",
+                "cards": [
+                    {"type": "tile", "entity": "fan.bathroom", "name": "Bathroom Fan"},
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    assert 'id="dimmer-modal"' in html
+    assert 'data-fan-entity="fan.bathroom"' in html
+    assert 'id="dimmer-track"' in html
+    assert 'id="dimmer-pct"' in html
+
+
+def test_fan_modal_emitted_for_fan_entity_row():
+    """Long-press level modal also wires up for fan rows inside entities cards."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Entities",
+                "path": "ents",
+                "cards": [
+                    {
+                        "type": "entities",
+                        "entities": [
+                            "fan.living_room",
+                            "sensor.temp",
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    assert 'id="dimmer-modal"' in html
+    assert 'data-fan-entity="fan.living_room"' in html
+
+
+def test_climate_modal_emitted_for_climate_tile():
+    """Long-press climate modal must be injected for climate tiles."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Climate",
+                "path": "climate",
+                "cards": [
+                    {"type": "tile", "entity": "climate.living_room", "name": "Living Room"},
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    assert 'id="climate-modal"' in html
+    assert 'data-climate-entity="climate.living_room"' in html
+    for elem in ["climate-current-temp", "climate-target-temp", "climate-temp-up",
+                 "climate-temp-down", "climate-modes", "climate-close-btn", "climate-name"]:
+        assert f'id="{elem}"' in html, f"Missing #{elem}"
+
+
+def test_climate_modal_emitted_for_climate_entity_row():
+    """Long-press climate modal also wires up for climate rows inside entities cards."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Entities",
+                "path": "ents",
+                "cards": [
+                    {
+                        "type": "entities",
+                        "entities": [
+                            "climate.master",
+                            "sensor.temp",
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    assert 'id="climate-modal"' in html
+    assert 'data-climate-entity="climate.master"' in html
+
+
+def test_modals_not_emitted_without_supported_domains():
+    """No dimmer/cover/climate modal markup when a view has none of those domains."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Sensors",
+                "path": "sensors",
+                "cards": [
+                    {"type": "entity", "entity": "sensor.temp"},
+                    {"type": "tile", "entity": "switch.something"},
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    assert 'id="dimmer-modal"' not in html
+    assert 'id="cover-modal"' not in html
+    assert 'id="climate-modal"' not in html
+    assert "showDimmer" not in html
+    assert "showCover" not in html
+    assert "showClimate" not in html
+
+
+def test_modal_scripts_rendered_in_body_slot():
+    """Modal scripts must live inside the body (not head) so htmx view swaps re-run them."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Lights",
+                "path": "lights",
+                "cards": [
+                    {"type": "tile", "entity": "light.kitchen", "name": "Kitchen"},
+                    {"type": "tile", "entity": "fan.bathroom", "name": "Bath Fan"},
+                    {"type": "tile", "entity": "climate.living", "name": "HVAC"},
+                    {"type": "tile", "entity": "cover.garage", "name": "Garage"},
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    body = html.split("</head>", 1)[1]
+
+    # Scripts must be inside body so they re-execute on htmx body swaps
+    assert "window.__ldLevelWired" in body
+    assert "window.__ldCoverWired" in body
+    assert "window.__ldClimateWired" in body
+    # And must not be duplicated in head
+    head = html.split("</head>", 1)[0]
+    assert "window.__ldLevelWired" not in head
+    assert "window.__ldCoverWired" not in head
+    assert "window.__ldClimateWired" not in head
