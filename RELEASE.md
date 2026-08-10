@@ -1,3 +1,10 @@
+# Release Notes for v0.19.2 (2026-08-09)
+
+A small quality-of-life change: you can now turn off the on/off toggle switches on an Entities card. LightDash adds a toggle to every light, switch, fan and input_boolean row so you can flip them on or off from the card. If you prefer a cleaner, read-only list — or just don't want a stray tap to turn something on — set `lightdash.show_toggle: false` on the card to hide all the toggles on it, or on a single row to hide just that one.
+
+- **Hide toggle switches on Entities cards:** Add `lightdash: { show_toggle: false }` to any Entities card and every row's toggle switch disappears, and tapping a row no longer flips the entity either. The rows still show the entity's name, icon and current state.
+- **Hide a single toggle:** Put `lightdash: { show_toggle: false }` on just one entity row (e.g. an always-on light you don't want to switch off by accident) while the rest of the card keeps its toggles.
+
 # Release Notes for v0.18.1 (2026-06-28) — v0.19.1 (alarm panel)
 
 A batch of layout fixes, preview improvements, and a new alarm control panel card: the fixed-grid view keeps cards from being squashed, weather cards show up in previews, a draggable divider lets you resize the config panes, and you can now arm and disarm your Alarmo security system directly from a LightDash dashboard.

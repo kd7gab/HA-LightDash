@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.19.2 (2026-08-09)
+- **Added:** `lightdash.show_toggle` option for `entities` cards — set `show_toggle: false` on the card to hide all row toggle switches, or on an individual row to hide just that toggle. When opted out, the row no longer responds to click-to-toggle either, and the toggle sync script (`st()`) is not injected when no toggles remain in a view.
+- **Changed:** `_render_entities` gates both `_render_entity_toggle` and the row-level click-to-toggle `hx-*` attributes on the new `show_toggle` flag (card-level, overridable per-entity via the row's own `lightdash` block).
+- **Changed:** `_view_needs_toggle_sync` now skips entities cards/rows that opt out via `show_toggle: false`.
+
 ## v0.19.1 (2026-06-28)
 - **Changed:** Alarm panel CSS redesigned — uses theme CSS variables (`--radius`, `--radius-sm`, `--card-bg`, `--card-border`, `--control-bg`, `--control-border`, `--divider`, `--text-faint`, `--accent`) throughout. Centred header with large icon badge (64px) and soft state-colour glow via `drop-shadow` + `color-mix`. Keypad now 3-column classic numpad layout (1-9 + 0/backspace/clear). Action buttons use `--radius-sm` and `--control-border`.
 - **Changed:** Alarm panel header simplified — removed `alarm-info` wrapper, state colour now injected as `--alarm-color` CSS custom property on `.alarm-card`, inherited by badge, state label, disarm button, dot indicators, and code input focus ring.

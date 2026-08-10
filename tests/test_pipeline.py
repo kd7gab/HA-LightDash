@@ -1755,3 +1755,118 @@ def test_fixed_grid_card_without_grid_layout():
 
     assert "grid-column: 1 / span 2" in html
     assert html.count('class="grid-cell"') == 2
+
+
+def test_entities_card_lightdash_show_toggle_false():
+    """Card-level lightdash: show_toggle: false removes toggles and the sync script."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Entities",
+                "path": "ents",
+                "cards": [
+                    {
+                        "type": "entities",
+                        "title": "Lights",
+                        "lightdash": {"show_toggle": False},
+                        "entities": [
+                            "light.kitchen",
+                            "sensor.temp",
+                            "fan.bathroom",
+                            "cover.garage",
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    # No toggles rendered anywhere
+    assert html.count('class="entity-toggle"') == 0, "Expected 0 toggles"
+
+    # Cover still gets cover controls
+    assert 'class="cover-controls"' in html
+
+    # Rows keep their layout
+    rows = html.split('class="entity-row"')
+    assert len(rows) == 5  # header + 4 rows
+
+    # No toggle sync script injected (no visible toggles in view)
+    assert "function st()" not in html
+
+    # No click-to-toggle on the row divs (cover controls still use hx-post)
+    assert "action: 'toggle'" not in html
+
+
+def test_entities_entity_lightdash_show_toggle_false():
+    """Per-entity lightdash: show_toggle: false suppresses only that row's toggle."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Entities",
+                "path": "ents",
+                "cards": [
+                    {
+                        "type": "entities",
+                        "entities": [
+                            {"entity": "light.kitchen", "lightdash": {"show_toggle": False}},
+                            "fan.bathroom",
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    # Only fan.bathroom keeps a toggle
+    assert html.count('class="entity-toggle"') == 1, "Expected 1 toggle (fan.bathroom only)"
+    assert "entity_id: 'fan.bathroom'" in html
+    assert "entity_id: 'light.kitchen'" not in html
+
+    # Sync script still injected because one toggle remains
+    assert "function st()" in html
+
+
+def test_entities_show_toggle_defaults_on():
+    """Without lightdash.show_toggle the toggle behavior is unchanged."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Entities",
+                "path": "ents",
+                "cards": [
+                    {
+                        "type": "entities",
+                        "entities": [
+                            "light.kitchen",
+                            "fan.bathroom",
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    assert html.count('class="entity-toggle"') == 2
+    assert "function st()" in html
