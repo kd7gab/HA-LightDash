@@ -1,3 +1,11 @@
+# Release Notes for v0.19.4 (2026-08-10)
+
+A bug fix: the press-and-hold brightness and shade-position popups (shown by holding a light or cover tile) were never appearing, even though the feature was documented. LightDash was loading the scripts and styles for these popups, but the popup itself was missing from the package, so nothing was ever shown on screen.
+
+- **Long-press dimmer popup now works:** Hold a light (or fan) tile or row for half a second and the brightness slider pops up, with the current brightness level, ready to drag.
+- **Long-press cover popup now works:** Hold a cover tile or row and the position slider pops up with up/stop/down buttons, pre-filled with the cover's current position.
+- **Nothing else changed** — the popups hide themselves when you press the ✕, and work the same way they always should have.
+
 # Release Notes for v0.19.2 (2026-08-09)
 
 A small quality-of-life change: you can now turn off the on/off toggle switches on an Entities card. LightDash adds a toggle to every light, switch, fan and input_boolean row so you can flip them on or off from the card. If you prefer a cleaner, read-only list — or just don't want a stray tap to turn something on — set `lightdash.show_toggle: false` on the card to hide all the toggles on it, or on a single row to hide just that one.

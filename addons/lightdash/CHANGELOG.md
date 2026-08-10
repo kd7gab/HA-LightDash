@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.19.4 (2026-08-10)
+- **Fixed:** Long-press dimmer and cover modals now actually display. The modal popups were never shown because the modal HTML markup (`dimmer_modal.html`, `cover_modal.html`) was missing from the repository, so the view only got the dimmer/cover JavaScript and CSS — which bailed out because the `#dimmer-modal` / `#cover-modal` elements it drives did not exist.
+- **Added:** `app/templates/dimmer_modal.html` and `app/templates/cover_modal.html` — the long-press popups with their full set of elements the existing `dimmer.js` / `cover.js` scripts expect (track, fill, name, percentage, close button, and up/stop/down controls for covers). Hidden by default, shown on a half-second press-and-hold on a light, fan, or cover tile/row.
+
 ## v0.19.2 (2026-08-09)
 - **Added:** `lightdash.show_toggle` option for `entities` cards — set `show_toggle: false` on the card to hide all row toggle switches, or on an individual row to hide just that toggle. When opted out, the row no longer responds to click-to-toggle either, and the toggle sync script (`st()`) is not injected when no toggles remain in a view.
 - **Changed:** `_render_entities` gates both `_render_entity_toggle` and the row-level click-to-toggle `hx-*` attributes on the new `show_toggle` flag (card-level, overridable per-entity via the row's own `lightdash` block).

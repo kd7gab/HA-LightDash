@@ -1870,3 +1870,127 @@ def test_entities_show_toggle_defaults_on():
 
     assert html.count('class="entity-toggle"') == 2
     assert "function st()" in html
+
+
+def test_dimmer_modal_emitted_for_light_tile():
+    """Long-press dimmer modal markup must be injected when a light tile is present."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Lights",
+                "path": "lights",
+                "cards": [
+                    {"type": "tile", "entity": "light.kitchen", "name": "Kitchen"},
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    # Modal container emitted and hidden by default
+    assert 'id="dimmer-modal"' in html
+    assert 'id="dimmer-modal" style="display:none"' in html or 'style="display:none"' in html
+
+    # Every element the dimmer.js script drives must exist
+    for elem in ["dimmer-track", "dimmer-fill", "dimmer-pct", "dimmer-name",
+                 "dimmer-close-btn", "dimmer-icon", "dimmer-left"]:
+        assert f'id="{elem}"' in html, f"Missing #{elem}"
+
+    # Trigger element present
+    assert 'data-light-entity="light.kitchen"' in html
+
+
+def test_cover_modal_emitted_for_cover_tile():
+    """Long-press cover modal markup must be injected when a cover tile is present."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Covers",
+                "path": "covers",
+                "cards": [
+                    {"type": "tile", "entity": "cover.garage", "name": "Garage"},
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    assert 'id="cover-modal"' in html
+    for elem in ["cover-track", "cover-fill", "cover-pos", "cover-name",
+                 "cover-close-btn", "cover-btn-up", "cover-btn-stop", "cover-btn-down", "cover-left"]:
+        assert f'id="{elem}"' in html, f"Missing #{elem}"
+
+    # Cover control buttons present
+    assert "▲" in html
+    assert "⏹" in html
+    assert "▼" in html
+
+
+def test_dimmer_modal_emitted_for_light_entity_row():
+    """Long-press dimmer also wires up for light entities inside entities cards."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Entities",
+                "path": "ents",
+                "cards": [
+                    {
+                        "type": "entities",
+                        "entities": [
+                            "light.kitchen",
+                            "sensor.temp",
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    assert 'id="dimmer-modal"' in html
+    assert 'data-light-entity="light.kitchen"' in html
+
+
+def test_modals_not_emitted_without_light_or_cover():
+    """No modal markup or scripts when a view has neither lights nor covers."""
+    from app.parser import parse_dashboard
+    from app.renderer import render_view
+
+    raw: Dict[str, Any] = {
+        "views": [
+            {
+                "title": "Sensors",
+                "path": "sensors",
+                "cards": [
+                    {"type": "entity", "entity": "sensor.temp"},
+                ],
+            }
+        ]
+    }
+
+    dashboard = parse_dashboard(raw)
+    view = dashboard.views[0]
+    html = render_view(view, dashboard)
+
+    assert 'id="dimmer-modal"' not in html
+    assert 'id="cover-modal"' not in html
+    assert "showDimmer" not in html
+    assert "showCover" not in html
